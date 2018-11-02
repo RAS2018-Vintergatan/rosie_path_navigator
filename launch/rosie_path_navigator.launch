@@ -1,0 +1,6 @@
+<launch>
+
+	<!-- run the path navigator node -->
+	<node pkg="rosie_path_navigator" type="rosie_path_navigator" name="rosie_path_navigator"/>
+
+</launch>
