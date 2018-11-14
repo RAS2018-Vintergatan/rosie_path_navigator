@@ -10,7 +10,7 @@ boost::shared_ptr<nav_msgs::Odometry> lastOdom_ptr;
 
 int currentPathPoint = -1;
 int pathLength = 0;
-boost::shared_ptr<geometry_msgs::PoseArray> pathArray_ptr;
+boost::shared_ptr<nav_msgs::Path> pathArray_ptr;
 
 boost::shared_ptr<tf::TransformListener> odom_tfl_ptr;
 boost::shared_ptr<tf::TransformListener> target_tfl_ptr;
@@ -97,12 +97,10 @@ void currentPoseCallback(const nav_msgs::Odometry& msg){
 	*lastOdom_ptr = msg;
 }
 
-int i = 8;
-void pathCallback(const geometry_msgs::PoseArray& msg){
-	if(msg.header.seq == pathArray_ptr->header.seq || i++ < 10){
+void pathCallback(const nav_msgs::Path& msg){
+	if(msg.header.seq == pathArray_ptr->header.seq){
 		return;
 	}
-	i = 0;
 	pathLength = msg.poses.size();
 	currentPathPoint = 0;
 	*pathArray_ptr = msg;
@@ -133,7 +131,7 @@ int main(int argc, char **argv){
 	targetPose_ptr->header.stamp = ros::Time::now();
 	targetPose_ptr->header.frame_id = "world";
 
-    ros::Publisher targetPose_pub = n.advertise<geometry_msgs::PoseStamped>("/move_base_simple/goal",1);
+    ros::Publisher targetPose_pub = n.advertise<geometry_msgs::PoseStamped>("/rosie_pose_goal",1);
     ros::Subscriber currentPose_sub = n.subscribe("/odom", 1, currentPoseCallback);
     ros::Subscriber path_sub = n.subscribe("/rosie_path", 1, pathCallback);
 
