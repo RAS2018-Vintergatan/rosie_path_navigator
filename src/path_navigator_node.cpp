@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/PoseArray.h>
+#include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
 #include <math.h>
 #include <tf/transform_listener.h>
@@ -80,8 +80,8 @@ void progressPath(){
 				targetPose_ptr->header.seq++;
 				targetPose_ptr->header.stamp = ros::Time::now();
 				targetPose_ptr->header.frame_id = "world";
-				targetPose_ptr->pose.position.x = pathArray_ptr->poses[currentPathPoint].position.x;
-				targetPose_ptr->pose.position.y = pathArray_ptr->poses[currentPathPoint].position.y;
+				targetPose_ptr->pose.position.x = pathArray_ptr->poses[currentPathPoint].pose.position.x;
+				targetPose_ptr->pose.position.y = pathArray_ptr->poses[currentPathPoint].pose.position.y;
 			}
 		}
 	}
@@ -108,7 +108,7 @@ void pathCallback(const nav_msgs::Path& msg){
 		targetPose_ptr->header.seq++;
 		targetPose_ptr->header.stamp = ros::Time::now();
 		targetPose_ptr->header.frame_id = "world";
-		targetPose_ptr->pose = pathArray_ptr->poses[currentPathPoint];
+		targetPose_ptr->pose = pathArray_ptr->poses[currentPathPoint].pose;
 	}
 }
 
@@ -125,7 +125,7 @@ int main(int argc, char **argv){
 
 	targetPose_ptr.reset(new geometry_msgs::PoseStamped);
 	lastOdom_ptr.reset(new nav_msgs::Odometry);
-	pathArray_ptr.reset(new geometry_msgs::PoseArray);
+	pathArray_ptr.reset(new nav_msgs::Path);
 
 	targetPose_ptr->header.seq++;
 	targetPose_ptr->header.stamp = ros::Time::now();
