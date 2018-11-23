@@ -16,4 +16,4 @@ include_directories(
 
 add_executable(rosie_path_navigator src/path_navigator_node.cpp)
 target_link_libraries(rosie_path_navigator ${catkin_LIBRARIES})
-add_dependencies(rosie_path_navigator geometry_msgs nav_msgs tf)
+add_dependencies(rosie_path_navigator ${catkin_EXPORTED_TARGETS})
