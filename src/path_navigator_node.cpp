@@ -2,6 +2,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
+#include <rosie_path_navigator/PathNavigationService.h>
 #include <math.h>
 #include <tf/transform_listener.h>
 
@@ -11,6 +12,9 @@ boost::shared_ptr<nav_msgs::Odometry> lastOdom_ptr;
 int currentPathPoint = -1;
 int pathLength = 0;
 boost::shared_ptr<nav_msgs::Path> pathArray_ptr;
+int lastId = -1;
+
+rosie_path_navigator::PathNavigationService::Request request;
 
 boost::shared_ptr<tf::TransformListener> odom_tfl_ptr;
 boost::shared_ptr<tf::TransformListener> target_tfl_ptr;
@@ -65,6 +69,7 @@ void progressPath(){
 													(*targetPose_ptr).pose.orientation.y,
 													(*targetPose_ptr).pose.orientation.z,
 													(*targetPose_ptr).pose.orientation.w);
+
 	tf::Matrix3x3 m_t(targetQuaternion);
 	double roll_t, pitch_t, yaw_t;
 	m_t.getRPY(roll_t, pitch_t, yaw_t);
@@ -73,8 +78,8 @@ void progressPath(){
 	float deltaAnglePosition = capAngle(yaw - atan2(deltaY, deltaX));
 	float deltaAnglePose = capAngle(yaw_t-yaw);
 
-	if(distance < 0.2){
-		if(deltaAnglePose > -0.15 && deltaAnglePose < 0.15){
+	if(distance < 0.3){
+		//if(deltaAnglePose > -0.15 && deltaAnglePose < 0.15){
 			if(currentPathPoint < pathLength-1){
 				++currentPathPoint;
 				targetPose_ptr->header.seq++;
@@ -82,8 +87,15 @@ void progressPath(){
 				targetPose_ptr->header.frame_id = "world";
 				targetPose_ptr->pose.position.x = pathArray_ptr->poses[currentPathPoint].pose.position.x;
 				targetPose_ptr->pose.position.y = pathArray_ptr->poses[currentPathPoint].pose.position.y;
+				targetPose_ptr->pose.orientation.z = pathArray_ptr->poses[currentPathPoint].pose.orientation.z;
+				targetPose_ptr->pose.orientation.w = pathArray_ptr->poses[currentPathPoint].pose.orientation.w;
+			}else{
+				targetPose_ptr->pose.position.x = lastOdom_ptr->pose.pose.position.x;
+				targetPose_ptr->pose.position.y = lastOdom_ptr->pose.pose.position.y;
+				targetPose_ptr->pose.orientation.z = lastOdom_ptr->pose.pose.orientation.z;
+				targetPose_ptr->pose.orientation.w = lastOdom_ptr->pose.pose.orientation.w;
 			}
-		}
+		//}
 	}
 }
 
@@ -97,19 +109,21 @@ void currentPoseCallback(const nav_msgs::Odometry& msg){
 	*lastOdom_ptr = msg;
 }
 
-void pathCallback(const nav_msgs::Path& msg){
-	if(msg.header.seq == pathArray_ptr->header.seq){
-		return;
+bool pathCallback(rosie_path_navigator::PathNavigationService::Request &req, rosie_path_navigator::PathNavigationService::Response &res){	
+	ROS_ERROR("NAVIGATOR --- pathID: %d", req.id);
+	res.response = 1;
+	if(req.id == lastId){
+		return true;
 	}
-	pathLength = msg.poses.size();
+	pathLength = req.path.poses.size();
 	currentPathPoint = 0;
-	*pathArray_ptr = msg;
+	*pathArray_ptr = req.path;
+	lastId = req.id;
 	if(pathLength > 0){
-		targetPose_ptr->header.seq++;
-		targetPose_ptr->header.stamp = ros::Time::now();
 		targetPose_ptr->header.frame_id = "world";
 		targetPose_ptr->pose = pathArray_ptr->poses[currentPathPoint].pose;
 	}
+	return true;
 }
 
 int main(int argc, char **argv){
@@ -133,7 +147,9 @@ int main(int argc, char **argv){
 
     ros::Publisher targetPose_pub = n.advertise<geometry_msgs::PoseStamped>("/rosie_pose_goal",1);
     ros::Subscriber currentPose_sub = n.subscribe("/odom", 1, currentPoseCallback);
-    ros::Subscriber path_sub = n.subscribe("/rosie_path", 1, pathCallback);
+    //ros::Subscriber path_sub = n.subscribe("/rosie_path", 1, pathCallback);
+
+    ros::ServiceServer pathService = n.advertiseService<rosie_path_navigator::PathNavigationService::Request, rosie_path_navigator::PathNavigationService::Response>("/rosie_path_service", pathCallback);
 
     ros::Rate loop_rate(2);
 

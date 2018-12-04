@@ -1,0 +1,4 @@
+nav_msgs/Path path
+int8 id
+---
+int8 response
