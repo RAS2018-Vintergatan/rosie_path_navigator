@@ -78,7 +78,7 @@ void progressPath(){
 	float deltaAnglePosition = capAngle(yaw - atan2(deltaY, deltaX));
 	float deltaAnglePose = capAngle(yaw_t-yaw);
 
-	if(distance < 0.3){
+	if(distance < 0.1){
 		//if(deltaAnglePose > -0.15 && deltaAnglePose < 0.15){
 			if(currentPathPoint < pathLength-1){
 				++currentPathPoint;
